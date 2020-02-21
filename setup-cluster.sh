@@ -23,3 +23,32 @@ helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system
 helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
 # Add prometheus
 helm upgrade -i appmesh-prometheus eks/appmesh-prometheus --namespace appmesh-system --set retention=12h --set persistentVolumeClaim.claimName=prometheus
+
+# External DNS
+PolicyARN=$(aws iam create-policy \
+    --policy-name ExternalDNSPolicy \
+    --policy-document file://external-dns-policy.json \
+    | jq -r ".Policy.Arn")
+eksctl create iamserviceaccount \
+    --cluster=aviary \
+    --namespace=appmesh-system \
+    --name=external-dns-controller \
+    --attach-policy-arn=$PolicyARN \
+    --override-existing-serviceaccounts \
+    --approve
+kubectl apply -f appmesh-system/external-dns.yaml
+
+# ALB Ingress
+kubectl apply -f appmesh-system/alb-rbac-role.yaml
+PolicyARN=$(aws iam create-policy \
+    --policy-name ALBIngressControllerIAMPolicy \
+    --policy-document https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/v1.1.4/docs/examples/iam-policy.json \
+    | jq -r ".Policy.Arn")
+eksctl create iamserviceaccount \
+    --cluster=aviary \
+    --namespace=appmesh-system \
+    --name=alb-ingress-controller \
+    --attach-policy-arn=$PolicyARN \
+    --override-existing-serviceaccounts \
+    --approve
+kubectl apply -f appmesh-system/ingress-controller.yaml
