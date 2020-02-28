@@ -52,3 +52,6 @@ eksctl create iamserviceaccount \
     --override-existing-serviceaccounts \
     --approve
 kubectl apply -f appmesh-system/ingress-controller.yaml
+
+# Chaos!
+helm install chaoskube stable/chaoskube --set dryRun=false,namespaces='!kube-system\,!appmesh-system',interval=5m,rbac.create=true

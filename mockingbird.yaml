@@ -21,7 +21,7 @@ metadata:
   name: mockingbird
   namespace: aviary
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: mockingbird
@@ -85,3 +85,8 @@ spec:
           weightedTargets:
             - virtualNodeName: mockingbird-v1
               weight: 1
+        retryPolicy:
+          maxRetries: 4
+          perRetryTimeoutMillis: 1000
+          httpRetryEvents:
+          - server-error
