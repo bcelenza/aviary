@@ -12,6 +12,8 @@ nodeGroups:
     desiredCapacity: 10
     privateNetworking: true
     iam:
+      attachPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAReadOnly
       withAddonPolicies:
         imageBuilder: true
         autoScaler: true

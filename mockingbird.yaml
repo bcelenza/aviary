@@ -10,6 +10,8 @@ spec:
   ports:
     - port: 80
       name: http
+    - port: 9901
+      name: envoy-admin
   selector:
     app: mockingbird
     version: v1
@@ -21,7 +23,7 @@ metadata:
   name: mockingbird
   namespace: aviary
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: mockingbird
@@ -59,6 +61,11 @@ spec:
     - portMapping:
         port: 80
         protocol: http
+      tls:
+        mode: STRICT
+        certificate:
+          acm:
+            certificateArn: arn:aws:acm:us-east-1:027496699299:certificate/8da4ee1e-a0ec-437b-9629-edfbe10097cf
   serviceDiscovery:
     dns:
       hostName: mockingbird.aviary.svc.cluster.local

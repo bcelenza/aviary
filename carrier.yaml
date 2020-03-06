@@ -10,6 +10,8 @@ spec:
   ports:
     - port: 80
       name: http
+    - port: 9901
+      name: envoy-admin
   selector:
     app: carrier
 
@@ -20,7 +22,7 @@ metadata:
   name: carrier
   namespace: aviary
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: carrier
@@ -64,6 +66,14 @@ spec:
   backends:
     - virtualService:
         virtualServiceName: mockingbird.aviary.svc.cluster.local
+  backendDefaults:
+    clientPolicy:
+      tls:
+        validation:
+          trust:
+            acm:
+              certificateAuthorityArns:
+                - arn:aws:acm-pca:us-east-1:027496699299:certificate-authority/ce980227-0739-492d-a3be-589a924fbb31
   logging:
     accessLog:
       file:
