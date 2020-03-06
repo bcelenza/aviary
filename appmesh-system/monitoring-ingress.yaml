@@ -1,0 +1,22 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:027496699299:certificate/572ce0fc-c346-4f5a-bd29-68e8495f11b6
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    external-dns.alpha.kubernetes.io/hostname: aviary-monitoring.celenza.dev
+  name: aviary-monitoring
+  namespace: appmesh-system
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: appmesh-grafana
+          servicePort: 3000
+        path: /*
