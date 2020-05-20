@@ -23,7 +23,7 @@ metadata:
   name: mockingbird
   namespace: aviary
 spec:
-  replicas: 10
+  replicas: 3
   selector:
     matchLabels:
       app: mockingbird
