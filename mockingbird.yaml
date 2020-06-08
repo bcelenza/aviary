@@ -23,16 +23,13 @@ metadata:
   name: mockingbird
   namespace: aviary
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: mockingbird
       version: v1
   template:
     metadata:
-      annotations:
-        appmesh.k8s.aws/mesh: aviary
-        appmesh.k8s.aws/virtualNode: mockingbird-v1-aviary
       labels:
         app: mockingbird
         version: v1
@@ -50,13 +47,16 @@ spec:
               value: "80"
 
 ---
-apiVersion: appmesh.k8s.aws/v1beta1
+apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
   name: mockingbird-v1
   namespace: aviary
 spec:
-  meshName: aviary
+  podSelector:
+    matchLabels:
+      app: mockingbird
+      version: v1
   listeners:
     - portMapping:
         port: 80
@@ -65,35 +65,50 @@ spec:
         mode: STRICT
         certificate:
           acm:
-            certificateArn: arn:aws:acm:us-east-1:027496699299:certificate/8da4ee1e-a0ec-437b-9629-edfbe10097cf
+            certificateARN: arn:aws:acm:us-east-1:027496699299:certificate/8da4ee1e-a0ec-437b-9629-edfbe10097cf
   serviceDiscovery:
     dns:
-      hostName: mockingbird.aviary.svc.cluster.local
+      hostname: mockingbird.aviary.svc.cluster.local
 
 ---
-apiVersion: appmesh.k8s.aws/v1beta1
+apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
 metadata:
-  name: mockingbird.aviary.svc.cluster.local
+  name: mockingbird
   namespace: aviary
 spec:
-  meshName: aviary
-  virtualRouter:
-    listeners:
-      - portMapping:
-          port: 80
-          protocol: http
+  awsName: mockingbird.aviary.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: mockingbird
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: mockingbird
+  namespace: aviary
+spec:
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
   routes:
-    - name: default-route
-      http:
+    - name: mockingbird-route
+      httpRoute:
         match:
           prefix: /
         action:
           weightedTargets:
-            - virtualNodeName: mockingbird-v1
+            - virtualNodeRef: 
+                name: mockingbird-v1
               weight: 1
         retryPolicy:
           maxRetries: 4
-          perRetryTimeoutMillis: 1000
+          perRetryTimeout:
+            value: 1
+            unit: s
           httpRetryEvents:
           - server-error
+          tcpRetryEvents:
+          - connection-error

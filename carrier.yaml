@@ -22,16 +22,13 @@ metadata:
   name: carrier
   namespace: aviary
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: carrier
       version: v1
   template:
     metadata:
-      annotations:
-        appmesh.k8s.aws/mesh: aviary
-        appmesh.k8s.aws/virtualNode: carrier-v1-aviary
       labels:
         app: carrier
         version: v1
@@ -49,30 +46,34 @@ spec:
               value: "80"
 
 ---
-apiVersion: appmesh.k8s.aws/v1beta1
+apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
   name: carrier-v1
   namespace: aviary
 spec:
-  meshName: aviary
+  podSelector:
+    matchLabels:
+      app: carrier
+      version: v1
   listeners:
     - portMapping:
         port: 80
         protocol: http
   serviceDiscovery:
     dns:
-      hostName: carrier.aviary.svc.cluster.local
+      hostname: carrier.aviary.svc.cluster.local
   backends:
     - virtualService:
-        virtualServiceName: mockingbird.aviary.svc.cluster.local
+        virtualServiceRef:
+          name: mockingbird
   backendDefaults:
     clientPolicy:
       tls:
         validation:
           trust:
             acm:
-              certificateAuthorityArns:
+              certificateAuthorityARNs:
                 - arn:aws:acm-pca:us-east-1:027496699299:certificate-authority/ce980227-0739-492d-a3be-589a924fbb31
   logging:
     accessLog:

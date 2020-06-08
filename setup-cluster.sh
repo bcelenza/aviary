@@ -12,7 +12,8 @@ eksctl utils associate-iam-oidc-provider --cluster aviary --approve
 eksctl create iamserviceaccount --name aviary-pods --namespace aviary --cluster aviary --attach-policy-arn arn:aws:iam::027496699299:policy/Aviary-Pods --approve --override-existing-serviceaccounts
 
 # Setup EC2 nodegroup for appmesh-system namespace (permanent storage required)
-eksctl create nodegroup --cluster aviary -f appmesh-system/nodegroup.yaml
+# NOTE: file is region-specific
+eksctl create nodegroup -f appmesh-system/nodegroup.yaml
 
 # Helm Charts
 # Add the EKS charts repo
