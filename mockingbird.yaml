@@ -61,6 +61,13 @@ spec:
     - portMapping:
         port: 80
         protocol: http
+      healthCheck:
+        protocol: http
+        path: /ping
+        healthyThreshold: 2
+        unhealthyThreshold: 10
+        timeoutMillis: 2000
+        intervalMillis: 5000
       tls:
         mode: STRICT
         certificate:
