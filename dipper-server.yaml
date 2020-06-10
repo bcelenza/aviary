@@ -2,67 +2,69 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mockingbird
+  name: dipper-server
   namespace: aviary
   labels:
-    app: mockingbird
+    app: dipper-server
 spec:
   ports:
-    - port: 80
-      name: http
+    - port: 8080
+      name: grpc
     - port: 9901
       name: envoy-admin
   selector:
-    app: mockingbird
+    app: dipper-server
     version: v1
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mockingbird
+  name: dipper-server
   namespace: aviary
 spec:
   replicas: 10
   selector:
     matchLabels:
-      app: mockingbird
+      app: dipper-server
       version: v1
   template:
     metadata:
       labels:
-        app: mockingbird
+        app: dipper-server
         version: v1
     spec:
       serviceAccountName: aviary-pods
       securityContext:
         fsGroup: 1337
       containers:
-        - name: mockingbird
-          image: bcelenza/mockingbird
+        - name: dipper-server
+          image: bcelenza/dipper-server
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           env:
-            - name: "HTTP_PORT"
-              value: "80"
+            - name: "PORT"
+              value: "8080"
+            - name: "COLOR"
+              value: "no color!"
 
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: mockingbird-v1
+  name: dipper-server-v1
   namespace: aviary
 spec:
   podSelector:
     matchLabels:
-      app: mockingbird
+      app: dipper-server
       version: v1
   listeners:
     - portMapping:
-        port: 80
-        protocol: http
+        port: 8080
+        protocol: grpc
       healthCheck:
-        protocol: http
+        protocol: grpc
         path: /ping
         healthyThreshold: 2
         unhealthyThreshold: 10
@@ -75,47 +77,38 @@ spec:
             certificateARN: arn:aws:acm:us-east-1:027496699299:certificate/8da4ee1e-a0ec-437b-9629-edfbe10097cf
   serviceDiscovery:
     dns:
-      hostname: mockingbird.aviary.svc.cluster.local
+      hostname: dipper-server.aviary.svc.cluster.local
 
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
 metadata:
-  name: mockingbird
+  name: dipper-server
   namespace: aviary
 spec:
-  awsName: mockingbird.aviary.svc.cluster.local
+  awsName: dipper-server.aviary.svc.cluster.local
   provider:
     virtualRouter:
       virtualRouterRef:
-        name: mockingbird
+        name: dipper-server
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualRouter
 metadata:
-  name: mockingbird
+  name: dipper-server
   namespace: aviary
 spec:
   listeners:
     - portMapping:
-        port: 80
-        protocol: http
+        port: 8080
+        protocol: grpc
   routes:
-    - name: mockingbird-route
-      httpRoute:
+    - name: dipper-server-route
+      grpcRoute:
         match:
           prefix: /
         action:
           weightedTargets:
             - virtualNodeRef: 
-                name: mockingbird-v1
+                name: dipper-server-v1
               weight: 1
-        retryPolicy:
-          maxRetries: 4
-          perRetryTimeout:
-            value: 1
-            unit: s
-          httpRetryEvents:
-          - server-error
-          tcpRetryEvents:
-          - connection-error

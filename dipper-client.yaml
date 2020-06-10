@@ -1,0 +1,98 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dipper-client
+  namespace: aviary
+  labels:
+    app: dipper-client
+spec:
+  ports:
+    - port: 8080
+      name: http
+    - port: 9901
+      name: envoy-admin
+  selector:
+    app: dipper-client
+    version: v1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dipper-client
+  namespace: aviary
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: dipper-client
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: dipper-client
+        version: v1
+    spec:
+      serviceAccountName: aviary-pods
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: dipper-client
+          image: bcelenza/dipper-client
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "PORT"
+              value: "8080"
+            - name: "COLOR_HOST"
+              value: "dipper-server.aviary.svc.cluster.local:8080"
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: dipper-client-v1
+  namespace: aviary
+spec:
+  podSelector:
+    matchLabels:
+      app: dipper-client
+      version: v1
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      tls:
+        mode: STRICT
+        certificate:
+          acm:
+            certificateARN: arn:aws:acm:us-east-1:027496699299:certificate/8da4ee1e-a0ec-437b-9629-edfbe10097cf
+  serviceDiscovery:
+    dns:
+      hostname: dipper-client.aviary.svc.cluster.local
+  backendDefaults:
+    clientPolicy:
+      tls:
+        validation:
+          trust:
+            acm:
+              certificateAuthorityARNs:
+                - arn:aws:acm-pca:us-east-1:027496699299:certificate-authority/ce980227-0739-492d-a3be-589a924fbb31
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: dipper-server
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: dipper-client
+  namespace: aviary
+spec:
+  awsName: dipper-client.aviary.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: dipper-client-v1

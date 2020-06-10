@@ -22,7 +22,7 @@ metadata:
   name: carrier
   namespace: aviary
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       app: carrier

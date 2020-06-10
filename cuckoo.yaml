@@ -22,7 +22,7 @@ metadata:
   name: cuckoo
   namespace: aviary
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: cuckoo
@@ -57,6 +57,16 @@ spec:
     - virtualService:
         virtualServiceRef:
           name: mockingbird
+    - virtualService:
+        virtualServiceRef:
+          name: dipper-client
+  listeners:
+  - portMapping:
+      port: 22
+      protocol: tcp
+  serviceDiscovery:
+    dns:
+      hostname: cuckoo.aviary.svc.cluster.local
   backendDefaults:
     clientPolicy:
       tls:
