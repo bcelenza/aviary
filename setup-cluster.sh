@@ -24,6 +24,8 @@ helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system
 helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
 # Add prometheus
 helm upgrade -i appmesh-prometheus eks/appmesh-prometheus --namespace appmesh-system --set retention=12h --set persistentVolumeClaim.claimName=prometheus
+# Add grafana
+helm upgrade -i appmesh-grafana eks/appmesh-grafana --namespace appmesh-system
 
 # External DNS
 PolicyARN=$(aws iam create-policy \
