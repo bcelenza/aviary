@@ -63,7 +63,7 @@ metadata:
   name: ingress-gateway
   namespace: aviary
 spec:
-  replicas: 10
+  replicas: 25
   selector:
     matchLabels:
       app: ingress-gateway
