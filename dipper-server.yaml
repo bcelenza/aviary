@@ -78,6 +78,10 @@ spec:
   serviceDiscovery:
     dns:
       hostname: dipper-server.aviary.svc.cluster.local
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
 
 ---
 apiVersion: appmesh.k8s.aws/v1beta2

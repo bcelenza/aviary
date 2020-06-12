@@ -20,6 +20,10 @@ spec:
         certificate:
           acm:
             certificateARN: arn:aws:acm:us-east-1:027496699299:certificate/8da4ee1e-a0ec-437b-9629-edfbe10097cf
+      logging:
+        accessLog:
+          file:
+            path: /dev/stdout
   backendDefaults:
     clientPolicy:
       tls:

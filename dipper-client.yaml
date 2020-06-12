@@ -83,6 +83,10 @@ spec:
     - virtualService:
         virtualServiceRef:
           name: dipper-server
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
 
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
