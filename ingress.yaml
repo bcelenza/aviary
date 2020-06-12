@@ -1,22 +1,80 @@
 ---
-apiVersion: extensions/v1beta1
-kind: Ingress
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
 metadata:
-  annotations:
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:027496699299:certificate/572ce0fc-c346-4f5a-bd29-68e8495f11b6
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/healthcheck-path: /ping
-    external-dns.alpha.kubernetes.io/hostname: aviary.celenza.dev
-  name: carrier
+  name: ingress-gateway
   namespace: aviary
 spec:
-  rules:
-  - http:
-      paths:
-      - backend:
-          serviceName: carrier
-          servicePort: 80
-        path: /*
+  namespaceSelector:
+    matchLabels:
+      mesh: aviary
+  podSelector:
+    matchLabels:
+      app: ingress-gateway
+  listeners:
+    - portMapping:
+        port: 443
+        protocol: http
+      tls:
+        mode: STRICT
+        certificate:
+          acm:
+            certificateARN: arn:aws:acm:us-east-1:027496699299:certificate/8da4ee1e-a0ec-437b-9629-edfbe10097cf
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route-carrier
+  namespace: aviary
+spec:
+  httpRoute:
+    match:
+      prefix: "/"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: carrier
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-gateway
+  namespace: aviary
+  labels:
+    app: ingress-gateway
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:027496699299:certificate/572ce0fc-c346-4f5a-bd29-68e8495f11b6
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
+    external-dns.alpha.kubernetes.io/hostname: aviary.celenza.dev
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 443
+  selector:
+    app: ingress-gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-gateway
+  namespace: aviary
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: ingress-gateway
+  template:
+    metadata:
+      labels:
+        app: ingress-gateway
+    spec:
+      serviceAccountName: aviary-pods
+      containers:
+        - name: envoy
+          image: injector-envoy-image
+          ports:
+            - containerPort: 443

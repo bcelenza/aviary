@@ -79,4 +79,46 @@ spec:
     accessLog:
       file:
         path: /dev/stdout
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: carrier
+  namespace: aviary
+spec:
+  awsName: carrier.aviary.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: carrier
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: carrier
+  namespace: aviary
+spec:
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  routes:
+    - name: carrier-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef: 
+                name: carrier-v1
+              weight: 1
+        retryPolicy:
+          maxRetries: 3
+          perRetryTimeout:
+            value: 1
+            unit: s
+          httpRetryEvents:
+          - server-error
+          tcpRetryEvents:
+          - connection-error
 
