@@ -75,7 +75,11 @@ metadata:
   name: ingress-gateway
   namespace: aviary
 spec:
-  replicas: 25
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 10%
+  replicas: 10
   selector:
     matchLabels:
       app: ingress-gateway
