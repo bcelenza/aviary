@@ -16,7 +16,7 @@ eksctl create iamserviceaccount --name aviary-pods --namespace aviary --cluster 
 eksctl create nodegroup -f appmesh-system/nodegroup.yaml
 
 # Helm Charts
-# Add the EKS charts repo
+helm repo add stable https://kubernetes-charts.storage.googleapis.com
 helm repo add eks https://aws.github.io/eks-charts
 # Add injector
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system
@@ -55,6 +55,18 @@ eksctl create iamserviceaccount \
     --override-existing-serviceaccounts \
     --approve
 kubectl apply -f appmesh-system/ingress-controller.yaml
+
+# HPA
+helm upgrade -i metrics-server stable/metrics-server \
+    --namespace kube-system \
+    --set args[0]=--kubelet-preferred-address-types=InternalIP
+
+# Flagger
+helm upgrade -i flagger flagger/flagger \
+    --namespace=appmesh-system \
+    --set crd.create=false \
+    --set meshProvider=appmesh:v1beta2 \
+    --set metricsServer=http://appmesh-prometheus:9090
 
 # Chaos!
 helm install chaoskube stable/chaoskube --set dryRun=false,namespaces='!kube-system\,!appmesh-system',interval=5m,rbac.create=true

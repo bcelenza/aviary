@@ -79,7 +79,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 10%
-  replicas: 10
+  replicas: 25
   selector:
     matchLabels:
       app: ingress-gateway
